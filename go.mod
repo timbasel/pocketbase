@@ -15,6 +15,7 @@ require (
 	github.com/pocketbase/dbx v1.12.0
 	github.com/pocketbase/ozzo-validation/v4 v4.3.0
 	github.com/pocketbase/tygoja v0.1.0
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/spf13/cast v1.10.0
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/crypto v0.54.0

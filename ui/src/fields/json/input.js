@@ -73,22 +73,7 @@ export function input(props) {
                 { htmlFor: uniqueId },
                 t.i({ className: app.fieldTypes.json.icon, ariaHidden: true }),
                 t.span({ className: "txt" }, () => props.field.name),
-                t.span(
-                    {
-                        hidden: () => isValidStringifiedJSON(local.value.trim()),
-                        className: "json-state",
-                        ariaDescription: app.attrs.tooltip("Invalid JSON", "left"),
-                    },
-                    t.i({ className: "ri-error-warning-fill txt-danger", ariaHidden: true }),
-                ),
-                t.span(
-                    {
-                        hidden: () => !isValidStringifiedJSON(local.value.trim()),
-                        className: "json-state",
-                        ariaDescription: app.attrs.tooltip("Valid JSON", "left"),
-                    },
-                    t.i({ className: "ri-checkbox-circle-fill txt-success", ariaHidden: true }),
-                ),
+                app.components.jsonChecker(() => local.value),
             ),
             app.components.codeEditor({
                 language: "js",
@@ -106,17 +91,4 @@ export function input(props) {
             }
         },
     );
-}
-
-function isValidStringifiedJSON(val) {
-    if (val === "") {
-        return true;
-    }
-
-    try {
-        JSON.parse(val);
-        return true;
-    } catch (_) {
-        return false;
-    }
 }
