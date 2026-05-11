@@ -178,15 +178,10 @@ func (f *JSONField) ValidateValue(ctx context.Context, app App, record *Record) 
 	rawStr := strings.TrimSpace(raw.String())
 
 	if !slices.Contains(emptyJSONValues, f.Schema) {
-		schema, err := jsonschema.CompileSchema(f.Schema)
-		if err != nil {
-			return err
-		}
-		if err := schema.Validate(rawStr); err != nil {
+		if err := jsonschema.Validate(rawStr, f.Schema); err != nil {
 			return validation.NewError("invalid_json_schema", err.Error())
 		}
 	}
-
 
 	if f.Required && slices.Contains(emptyJSONValues, rawStr) {
 		return validation.ErrRequired
@@ -197,26 +192,13 @@ func (f *JSONField) ValidateValue(ctx context.Context, app App, record *Record) 
 
 // ValidateSettings implements [Field.ValidateSettings] interface method.
 func (f *JSONField) ValidateSettings(ctx context.Context, app App, collection *Collection) error {
-	if err := validation.ValidateStruct(f,
+	return validation.ValidateStruct(f,
 		validation.Field(&f.Id, validation.By(DefaultFieldIdValidationRule)),
 		validation.Field(&f.Name, validation.By(DefaultFieldNameValidationRule)),
 		validation.Field(&f.Help, validation.By(DefaultFieldHelpValidationRule)),
+		validation.Field(&f.Schema, validation.By(JSONSchemaValidationRule)),
 		validation.Field(&f.MaxSize, validation.Min(0), validation.Max(maxSafeJSONInt)),
-	); err != nil {
-		return err
-	}
-
-	if !slices.Contains(emptyJSONValues, f.Schema) {
-		schema, err := jsonschema.CompileSchemaSchema()
-		if err != nil {
-			return err
-		}
-		if err := schema.Validate(f.Schema); err != nil {
-			return validation.NewError("invalid_json_schema_schema", err.Error())
-		}
-	}
-
-	return nil
+	)
 }
 
 // CalculateMaxBodySize implements the [MaxBodySizeCalculator] interface.
@@ -226,4 +208,15 @@ func (f *JSONField) CalculateMaxBodySize() int64 {
 	}
 
 	return f.MaxSize
+}
+
+func JSONSchemaValidationRule(schema any) error {
+	s, ok := schema.(string)
+	if !ok {
+		return validators.ErrUnsupportedValueType
+	}
+	if !slices.Contains(emptyJSONValues, s) {
+		return jsonschema.ValidateSchema(s)
+	}
+	return nil
 }
