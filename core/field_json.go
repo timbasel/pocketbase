@@ -9,6 +9,7 @@ import (
 	validation "github.com/pocketbase/ozzo-validation/v4"
 	"github.com/pocketbase/ozzo-validation/v4/is"
 	"github.com/pocketbase/pocketbase/core/validators"
+	"github.com/pocketbase/pocketbase/tools/jsonschema"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -50,6 +51,9 @@ type JSONField struct {
 	// Presentable hints the Dashboard UI to use the underlying
 	// field record value in the relation preview label.
 	Presentable bool `form:"presentable" json:"presentable"`
+
+	// Schema is JSON schema describing the data format of the field.
+	Schema string `form:"schema" json:"schema"`
 
 	// Help is an extra text explaining what the field is about.
 	// It is usually shown in Dashboard UI under the field input.
@@ -173,6 +177,17 @@ func (f *JSONField) ValidateValue(ctx context.Context, app App, record *Record) 
 
 	rawStr := strings.TrimSpace(raw.String())
 
+	if !slices.Contains(emptyJSONValues, f.Schema) {
+		schema, err := jsonschema.CompileSchema(f.Schema)
+		if err != nil {
+			return err
+		}
+		if err := schema.Validate(rawStr); err != nil {
+			return validation.NewError("invalid_json_schema", err.Error())
+		}
+	}
+
+
 	if f.Required && slices.Contains(emptyJSONValues, rawStr) {
 		return validation.ErrRequired
 	}
@@ -182,12 +197,26 @@ func (f *JSONField) ValidateValue(ctx context.Context, app App, record *Record) 
 
 // ValidateSettings implements [Field.ValidateSettings] interface method.
 func (f *JSONField) ValidateSettings(ctx context.Context, app App, collection *Collection) error {
-	return validation.ValidateStruct(f,
+	if err := validation.ValidateStruct(f,
 		validation.Field(&f.Id, validation.By(DefaultFieldIdValidationRule)),
 		validation.Field(&f.Name, validation.By(DefaultFieldNameValidationRule)),
 		validation.Field(&f.Help, validation.By(DefaultFieldHelpValidationRule)),
 		validation.Field(&f.MaxSize, validation.Min(0), validation.Max(maxSafeJSONInt)),
-	)
+	); err != nil {
+		return err
+	}
+
+	if !slices.Contains(emptyJSONValues, f.Schema) {
+		schema, err := jsonschema.CompileSchemaSchema()
+		if err != nil {
+			return err
+		}
+		if err := schema.Validate(f.Schema); err != nil {
+			return validation.NewError("invalid_json_schema_schema", err.Error())
+		}
+	}
+
+	return nil
 }
 
 // CalculateMaxBodySize implements the [MaxBodySizeCalculator] interface.

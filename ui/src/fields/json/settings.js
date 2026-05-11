@@ -54,6 +54,21 @@ export function settings(props) {
                     { className: "col-sm-12" },
                     t.div(
                         { className: "field" },
+                        t.label({ htmlFor: uniqueId + ".schema" }, "Schema"),
+                        app.components.jsonChecker(() => props.field.schema),
+                        app.components.codeEditor({
+                            language: "js",
+                            id: uniqueId + ".schema",
+                            name: () => `fields.${props.fieldIndex}.schema`,
+                            value: () => props.field.schema,
+                            oninput: (val) => (props.field.schema = val),
+                        }),
+                    ),
+                ),
+                t.div(
+                    { className: "col-sm-12" },
+                    t.div(
+                        { className: "field" },
                         t.label({ htmlFor: uniqueId + ".help" }, "Help text"),
                         t.input({
                             type: "text",

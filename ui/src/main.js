@@ -18,6 +18,7 @@ import "./base/copyButton";
 import "./base/codeBlock";
 import "./base/codeEditor";
 import "./base/codeBlockTabs";
+import "./base/jsonChecker";
 import "./base/select";
 import "./base/formattedDate";
 import "./base/refreshButton";
